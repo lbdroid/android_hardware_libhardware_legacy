@@ -268,6 +268,7 @@ protected:
 
             audio_devices_t device() const;
             void changeRefCount(AudioSystem::stream_type stream, int delta);
+	    uint32_t refCount();
             bool isDuplicated() const { return (mOutput1 != NULL && mOutput2 != NULL); }
             audio_devices_t supportedDevices();
             uint32_t latency();
