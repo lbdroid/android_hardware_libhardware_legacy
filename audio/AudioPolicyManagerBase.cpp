@@ -3234,6 +3234,43 @@ audio_devices_t AudioPolicyManagerBase::AudioOutputDescriptor::supportedDevices(
     }
 }
 
+
+void AudioPolicyManagerBase::AudioOutputDescriptor::changeRefCount(AudioSystem::stream_type stream, int delta)
+{
+    // forward usage count change to attached outputs
+    if (isDuplicated()) {
+        mOutput1->changeRefCount(stream, delta);
+        mOutput2->changeRefCount(stream, delta);
+    }
+    if ((delta + (int)mRefCount[stream]) < 0) {
+        ALOGW("changeRefCount() invalid delta %d for stream %d, refCount %d", delta, stream, mRefCount[stream]);
+        mRefCount[stream] = 0;
+        return;
+    }
+    mRefCount[stream] += delta;
+    ALOGV("changeRefCount() stream %d, count %d", stream, mRefCount[stream]);
+}
+
+uint32_t AudioPolicyManagerBase::AudioOutputDescriptor::refCount()
+{
+    uint32_t refcount = 0;
+    for (int i = 0; i < (int)AudioSystem::NUM_STREAM_TYPES; i++) {
+        refcount += mRefCount[i];
+    }
+    return refcount;
+}
+
+uint32_t AudioPolicyManagerBase::AudioOutputDescriptor::strategyRefCount(routing_strategy strategy)
+{
+    uint32_t refCount = 0;
+    for (int i = 0; i < (int)AudioSystem::NUM_STREAM_TYPES; i++) {
+        if (getStrategy((AudioSystem::stream_type)i) == strategy) {
+            refCount += mRefCount[i];
+        }
+    }
+    return refCount;
+}
+
 bool AudioPolicyManagerBase::AudioOutputDescriptor::isActive(uint32_t inPastMs) const
 {
     return isStrategyActive(NUM_STRATEGIES, inPastMs);
